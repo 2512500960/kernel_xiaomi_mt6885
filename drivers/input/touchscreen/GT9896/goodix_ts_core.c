@@ -877,6 +877,14 @@ static ssize_t goodix_fod_test_store(struct device *dev,
 	return count;
 }
 
+static ssize_t goodix_fod_status_show(struct device *dev,
+					struct device_attribute *attr, char *buf)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+
+	return snprintf(buf, 10, "%d\n", core_data->fod_status);
+}
+
 static DEVICE_ATTR(extmod_info, S_IRUGO, goodix_ts_extmod_show, NULL);
 static DEVICE_ATTR(driver_info, S_IRUGO, goodix_ts_driver_info_show, NULL);
 static DEVICE_ATTR(chip_info, S_IRUGO, goodix_ts_chip_info_show, NULL);
@@ -889,6 +897,9 @@ static DEVICE_ATTR(tp_test, S_IRUGO | S_IWUSR | S_IWGRP, goodix_ts_tp_test_show,
 		goodix_ts_tp_test_store);
 static DEVICE_ATTR(reg_rw, S_IRUGO | S_IWUSR | S_IWGRP,
 		goodix_ts_reg_rw_show, goodix_ts_reg_rw_store);
+
+static DEVICE_ATTR(fod_status, (S_IRUGO | S_IRGRP),
+		goodix_fod_status_show, NULL);
 
 static DEVICE_ATTR(fod_test, (S_IRUGO | S_IWUSR | S_IWGRP),
 		NULL, goodix_fod_test_store);
@@ -3133,6 +3144,10 @@ static int goodix_ts_probe(struct platform_device *pdev)
 	if (IS_ERR(core_data->gtp_fod_dev))
 		ts_err("Failed to create tp_dev class!");
 	else {
+		if (sysfs_create_file(&core_data->gtp_fod_dev->kobj, &dev_attr_fod_status.attr)) {
+			ts_err("Failed to create fod_status sysfs group!\n");
+			goto out;
+		}
 		if (sysfs_create_file(&core_data->gtp_fod_dev->kobj, &dev_attr_fod_test.attr)) {
 			ts_err("Failed to create fod_test sysfs group!\n");
 			goto out;
